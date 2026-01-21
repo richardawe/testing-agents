@@ -23,70 +23,89 @@ function checkGitHubConfig() {
     const statusBadge = document.getElementById('api-status');
     
     if (!GITHUB_TOKEN) {
-        statusBadge.textContent = '⚠️ GitHub Token Required';
-        statusBadge.className = 'status-badge inactive';
-        // Show modal after a short delay to ensure DOM is ready
-        setTimeout(() => {
-            showTokenPrompt();
-        }, 100);
+        if (statusBadge) {
+            statusBadge.textContent = '⚠️ GitHub Token Required';
+            statusBadge.className = 'status-badge inactive';
+        }
+        // Show modal immediately - DOM should be ready at this point
+        showTokenPrompt();
     } else {
-        statusBadge.textContent = '✅ Ready (Click to change token)';
-        statusBadge.className = 'status-badge active';
-        statusBadge.style.cursor = 'pointer';
-        statusBadge.title = 'Click to change GitHub token';
-        statusBadge.addEventListener('click', () => {
-            localStorage.removeItem('github_token');
-            location.reload();
-        });
+        if (statusBadge) {
+            statusBadge.textContent = '✅ Ready (Click to change token)';
+            statusBadge.className = 'status-badge active';
+            statusBadge.style.cursor = 'pointer';
+            statusBadge.title = 'Click to change GitHub token';
+            statusBadge.addEventListener('click', () => {
+                localStorage.removeItem('github_token');
+                location.reload();
+            });
+        }
     }
 }
 
 // Show token input prompt
 function showTokenPrompt() {
-    const existing = document.getElementById('token-prompt');
-    if (existing) {
-        existing.style.display = 'flex';
-        return;
-    }
-    
-    const prompt = document.createElement('div');
-    prompt.id = 'token-prompt';
-    prompt.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center;';
-    prompt.innerHTML = `
-        <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; margin: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-            <h3 style="margin-top: 0;">GitHub Token Required</h3>
-            <p>To use this application, you need a GitHub Personal Access Token with <code>repo</code> scope.</p>
-            <ol style="text-align: left; margin: 15px 0;">
-                <li>Go to <a href="https://github.com/settings/tokens/new?scopes=repo&description=AI%20Workflow%20App" target="_blank">GitHub Settings</a></li>
-                <li>Select scope: <code>repo</code></li>
-                <li>Generate and copy the token</li>
-                <li>Paste it below</li>
-            </ol>
-            <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx" style="width: 100%; padding: 10px; margin: 10px 0; border: 2px solid #ccc; border-radius: 5px; font-size: 14px; box-sizing: border-box;" />
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button onclick="window.saveToken()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">Save Token</button>
-                <a href="https://github.com/settings/tokens/new?scopes=repo&description=AI%20Workflow%20App" target="_blank" style="padding: 10px 20px; background: #764ba2; color: white; text-decoration: none; border-radius: 5px; font-size: 14px;">Create Token</a>
-                <button onclick="document.getElementById('token-prompt').style.display='none'" style="padding: 10px 20px; background: #999; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">Cancel</button>
+    try {
+        // Check if modal already exists
+        let prompt = document.getElementById('token-prompt');
+        
+        if (!prompt) {
+            prompt = document.createElement('div');
+            prompt.id = 'token-prompt';
+            document.body.appendChild(prompt);
+        }
+        
+        prompt.style.cssText = 'position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.8) !important; z-index: 99999 !important; display: flex !important; align-items: center !important; justify-content: center !important;';
+        prompt.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; margin: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 100000;">
+                <h3 style="margin-top: 0; color: #333;">GitHub Token Required</h3>
+                <p style="color: #666;">To use this application, you need a GitHub Personal Access Token with <code>repo</code> scope.</p>
+                <ol style="text-align: left; margin: 15px 0; color: #666;">
+                    <li>Go to <a href="https://github.com/settings/tokens/new?scopes=repo&description=AI%20Workflow%20App" target="_blank">GitHub Settings</a></li>
+                    <li>Select scope: <code>repo</code></li>
+                    <li>Generate and copy the token (starts with ghp_)</li>
+                    <li>Paste it below</li>
+                </ol>
+                <input type="text" id="token-input" placeholder="ghp_xxxxxxxxxxxx" style="width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #667eea; border-radius: 5px; font-size: 14px; box-sizing: border-box;" autocomplete="off" />
+                <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                    <button id="save-token-btn" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; flex: 1;">Save Token</button>
+                    <a href="https://github.com/settings/tokens/new?scopes=repo&description=AI%20Workflow%20App" target="_blank" style="padding: 10px 20px; background: #764ba2; color: white; text-decoration: none; border-radius: 5px; font-size: 14px; text-align: center;">Create Token</a>
+                    <button id="cancel-token-btn" style="padding: 10px 20px; background: #999; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">Cancel</button>
+                </div>
+                <p style="font-size: 0.9em; color: #666; margin-top: 15px; margin-bottom: 0;">Token is stored locally in your browser only.</p>
             </div>
-            <p style="font-size: 0.9em; color: #666; margin-top: 15px; margin-bottom: 0;">Token is stored locally in your browser only.</p>
-        </div>
-    `;
-    document.body.appendChild(prompt);
-    
-    // Focus on input
-    setTimeout(() => {
+        `;
+        
+        // Add event listeners
+        const saveBtn = document.getElementById('save-token-btn');
+        const cancelBtn = document.getElementById('cancel-token-btn');
         const input = document.getElementById('token-input');
-        if (input) input.focus();
-    }, 100);
-    
-    // Allow Enter key to save
-    const input = document.getElementById('token-input');
-    if (input) {
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                window.saveToken();
-            }
-        });
+        
+        if (saveBtn) {
+            saveBtn.addEventListener('click', window.saveToken);
+        }
+        
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                prompt.style.display = 'none';
+            });
+        }
+        
+        if (input) {
+            // Focus on input
+            setTimeout(() => input.focus(), 100);
+            
+            // Allow Enter key to save
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    window.saveToken();
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error showing token prompt:', error);
+        // Fallback: show alert
+        alert('Please enter your GitHub token. You can set it in the browser console:\nlocalStorage.setItem("github_token", "your-token-here");\n\nOr create a token at: https://github.com/settings/tokens/new?scopes=repo');
     }
 }
 

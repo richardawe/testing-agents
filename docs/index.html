@@ -137,32 +137,43 @@
     <!-- Token Prompt Modal (will be added by JS if needed) -->
     <div id="token-prompt" style="display: none;"></div>
     
-    <!-- Manual Token Entry Button (if needed) -->
     <script>
         // Set your GitHub repository here
         // Format: 'username/repository-name'
         window.GITHUB_REPO = window.GITHUB_REPO || 'richardawe/testing-agents';
         
-        // Add manual button to show token prompt if modal doesn't appear
+        // Global function to manually trigger token modal
+        window.showTokenModal = function() {
+            if (typeof showTokenPrompt === 'function') {
+                showTokenPrompt();
+            } else {
+                alert('JavaScript not loaded. Please refresh the page.');
+            }
+        };
+        
+        // Add a visible button as fallback if modal doesn't show
         document.addEventListener('DOMContentLoaded', function() {
-            // Check if token exists after a delay
             setTimeout(function() {
                 const token = localStorage.getItem('github_token');
-                if (!token && !document.getElementById('token-prompt')) {
-                    // Create a button to manually trigger the modal
-                    const manualBtn = document.createElement('button');
-                    manualBtn.textContent = 'Enter GitHub Token';
-                    manualBtn.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2);';
-                    manualBtn.onclick = function() {
-                        if (typeof showTokenPrompt === 'function') {
-                            showTokenPrompt();
-                        } else {
-                            alert('Please refresh the page. If the issue persists, check the browser console for errors.');
-                        }
-                    };
-                    document.body.appendChild(manualBtn);
+                const existingModal = document.getElementById('token-prompt');
+                const isModalVisible = existingModal && window.getComputedStyle(existingModal).display !== 'none';
+                
+                if (!token && !isModalVisible) {
+                    // Add a visible button in the header area
+                    const header = document.querySelector('header');
+                    if (header) {
+                        const tokenBtn = document.createElement('button');
+                        tokenBtn.textContent = '🔑 Enter GitHub Token';
+                        tokenBtn.id = 'manual-token-btn';
+                        tokenBtn.style.cssText = 'position: absolute; top: 20px; right: 20px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.2);';
+                        tokenBtn.onclick = function() {
+                            window.showTokenModal();
+                        };
+                        header.style.position = 'relative';
+                        header.appendChild(tokenBtn);
+                    }
                 }
-            }, 500);
+            }, 1000);
         });
     </script>
     <script src="js/app.js"></script>
