@@ -25,34 +25,69 @@ function checkGitHubConfig() {
     if (!GITHUB_TOKEN) {
         statusBadge.textContent = '⚠️ GitHub Token Required';
         statusBadge.className = 'status-badge inactive';
-        showTokenPrompt();
+        // Show modal after a short delay to ensure DOM is ready
+        setTimeout(() => {
+            showTokenPrompt();
+        }, 100);
     } else {
-        statusBadge.textContent = '✅ Ready';
+        statusBadge.textContent = '✅ Ready (Click to change token)';
         statusBadge.className = 'status-badge active';
+        statusBadge.style.cursor = 'pointer';
+        statusBadge.title = 'Click to change GitHub token';
+        statusBadge.addEventListener('click', () => {
+            localStorage.removeItem('github_token');
+            location.reload();
+        });
     }
 }
 
 // Show token input prompt
 function showTokenPrompt() {
     const existing = document.getElementById('token-prompt');
-    if (existing) return;
+    if (existing) {
+        existing.style.display = 'flex';
+        return;
+    }
     
     const prompt = document.createElement('div');
     prompt.id = 'token-prompt';
-    prompt.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center;';
+    prompt.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center;';
     prompt.innerHTML = `
-        <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px;">
-            <h3>GitHub Token Required</h3>
+        <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; margin: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+            <h3 style="margin-top: 0;">GitHub Token Required</h3>
             <p>To use this application, you need a GitHub Personal Access Token with <code>repo</code> scope.</p>
-            <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px;" />
+            <ol style="text-align: left; margin: 15px 0;">
+                <li>Go to <a href="https://github.com/settings/tokens/new?scopes=repo&description=AI%20Workflow%20App" target="_blank">GitHub Settings</a></li>
+                <li>Select scope: <code>repo</code></li>
+                <li>Generate and copy the token</li>
+                <li>Paste it below</li>
+            </ol>
+            <input type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxx" style="width: 100%; padding: 10px; margin: 10px 0; border: 2px solid #ccc; border-radius: 5px; font-size: 14px; box-sizing: border-box;" />
             <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button onclick="saveToken()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">Save Token</button>
-                <a href="https://github.com/settings/tokens/new?scopes=repo&description=AI%20Workflow%20App" target="_blank" style="padding: 10px 20px; background: #764ba2; color: white; text-decoration: none; border-radius: 5px;">Create Token</a>
+                <button onclick="window.saveToken()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">Save Token</button>
+                <a href="https://github.com/settings/tokens/new?scopes=repo&description=AI%20Workflow%20App" target="_blank" style="padding: 10px 20px; background: #764ba2; color: white; text-decoration: none; border-radius: 5px; font-size: 14px;">Create Token</a>
+                <button onclick="document.getElementById('token-prompt').style.display='none'" style="padding: 10px 20px; background: #999; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">Cancel</button>
             </div>
-            <p style="font-size: 0.9em; color: #666; margin-top: 10px;">Token is stored locally in your browser only.</p>
+            <p style="font-size: 0.9em; color: #666; margin-top: 15px; margin-bottom: 0;">Token is stored locally in your browser only.</p>
         </div>
     `;
     document.body.appendChild(prompt);
+    
+    // Focus on input
+    setTimeout(() => {
+        const input = document.getElementById('token-input');
+        if (input) input.focus();
+    }, 100);
+    
+    // Allow Enter key to save
+    const input = document.getElementById('token-input');
+    if (input) {
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                window.saveToken();
+            }
+        });
+    }
 }
 
 // Save GitHub token
